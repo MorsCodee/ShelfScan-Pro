@@ -1,0 +1,11 @@
+flask==3.1.0
+flask-cors==5.0.0
+flask-sqlalchemy==3.1.1
+sqlalchemy==2.0.41
+python-dotenv==1.0.1
+ultralytics==8.3.0
+opencv-python-headless==4.11.0.86
+Pillow==11.2.1
+numpy==1.26.4
+reportlab==4.4.1
+evidently==0.6.7

@@ -30,3 +30,4 @@ class Config:
 
     # Drift monitoring baseline
     DRIFT_THRESHOLD = float(os.getenv("DRIFT_THRESHOLD", "0.15"))  # 15% drift = alert
+    ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY", "pZ3VLTh7lahwzQY3bHzz")

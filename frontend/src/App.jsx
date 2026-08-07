@@ -3,6 +3,7 @@ import UploadSection from "./components/UploadSection"
 import ResultsSection from "./components/ResultsSection"
 import Dashboard from "./components/Dashboard"
 import "./App.css"
+
 // This is the core pattern of React —
 //  data flows DOWN through props, events flow UP through callback functions.
 export default function App() {
@@ -19,13 +20,23 @@ export default function App() {
   return (
     <div style={styles.container}>
 
-      {/* ── Header ── */}
+      {/* Background decoration */}
+      <div style={styles.bgOrb1} />
+      <div style={styles.bgOrb2} />
+      <div style={styles.bgOrb3} />
+
+      {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerInner}>
           <div style={styles.logo}>
-            <span style={styles.logoIcon}></span>
-            <span style={styles.logoText}>ShelfScan Pro</span>
-            <span style={styles.logoBadge}>AI</span>
+            <div style={styles.logoIcon}>
+              <span style={{fontSize: "20px"}}>📦</span>
+            </div>
+            <div>
+              <div style={styles.logoText}>ShelfScan Pro</div>
+              <div style={styles.logoSub}>AI Retail Intelligence</div>
+            </div>
+            <span style={styles.logoBadge}>BETA</span>
           </div>
 
           <nav style={styles.nav}>
@@ -36,7 +47,8 @@ export default function App() {
               }}
               onClick={() => setActiveTab("scan")}
             >
-              Scan
+              <span>🔍</span>
+              <span>Scan</span>
             </button>
             <button
               style={{
@@ -45,13 +57,14 @@ export default function App() {
               }}
               onClick={() => setActiveTab("dashboard")}
             >
-              Dashboard
+              <span>📊</span>
+              <span>Dashboard</span>
             </button>
           </nav>
         </div>
       </header>
 
-      {/* ── Main Content ── */}
+      {/* Main */}
       <main style={styles.main}>
         {activeTab === "scan" && (
           <>
@@ -68,66 +81,120 @@ export default function App() {
             )}
           </>
         )}
-
-        {activeTab === "dashboard" && (
-          <Dashboard />
-        )}
+        {activeTab === "dashboard" && <Dashboard />}
       </main>
 
     </div>
   )
 }
-
 const styles = {
   container: {
     minHeight: "100vh",
-    backgroundColor: "#0f1117",
+    backgroundColor: "#080c14",
+    position: "relative",
+    overflow: "hidden",
+  },
+  bgOrb1: {
+    position: "fixed",
+    top: "-200px",
+    right: "-200px",
+    width: "600px",
+    height: "600px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)",
+    pointerEvents: "none",
+    zIndex: 0,
+  },
+  bgOrb2: {
+    position: "fixed",
+    bottom: "-200px",
+    left: "-200px",
+    width: "600px",
+    height: "600px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
+    pointerEvents: "none",
+    zIndex: 0,
+  },
+  bgOrb3: {
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "800px",
+    height: "800px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(16,185,129,0.03) 0%, transparent 70%)",
+    pointerEvents: "none",
+    zIndex: 0,
   },
   header: {
-    backgroundColor: "#1a1d27",
-    borderBottom: "1px solid #2d3748",
-    padding: "0 24px",
     position: "sticky",
     top: 0,
     zIndex: 100,
+    background: "rgba(8, 12, 20, 0.8)",
+    backdropFilter: "blur(20px)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
   },
   headerInner: {
-    maxWidth: "1200px",
+    maxWidth: "1280px",
     margin: "0 auto",
+    padding: "0 24px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    height: "64px",
+    height: "68px",
   },
   logo: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: "12px",
   },
   logoIcon: {
-    fontSize: "24px",
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 15px rgba(59,130,246,0.3)",
   },
   logoText: {
-    fontSize: "20px",
+    fontSize: "17px",
     fontWeight: "700",
     color: "#ffffff",
+    letterSpacing: "-0.3px",
+  },
+  logoSub: {
+    fontSize: "11px",
+    color: "#4b5563",
+    fontWeight: "500",
   },
   logoBadge: {
-    backgroundColor: "#3b82f6",
+    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
     color: "#ffffff",
-    fontSize: "11px",
+    fontSize: "10px",
     fontWeight: "700",
     padding: "2px 8px",
     borderRadius: "20px",
+    letterSpacing: "0.5px",
   },
   nav: {
     display: "flex",
-    gap: "8px",
+    gap: "4px",
+    background: "rgba(255,255,255,0.04)",
+    padding: "4px",
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.06)",
   },
   navBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
     backgroundColor: "transparent",
-    color: "#9ca3af",
-    border: "1px solid transparent",
+    color: "#6b7280",
+    border: "none",
     padding: "8px 16px",
     borderRadius: "8px",
     cursor: "pointer",
@@ -136,13 +203,15 @@ const styles = {
     transition: "all 0.2s",
   },
   navBtnActive: {
-    backgroundColor: "#1e3a5f",
-    color: "#3b82f6",
-    border: "1px solid #3b82f6",
+    backgroundColor: "rgba(59,130,246,0.15)",
+    color: "#60a5fa",
+    boxShadow: "0 0 20px rgba(59,130,246,0.1)",
   },
   main: {
-    maxWidth: "1200px",
+    maxWidth: "1280px",
     margin: "0 auto",
-    padding: "32px 24px",
+    padding: "40px 24px",
+    position: "relative",
+    zIndex: 1,
   },
 }

@@ -5,6 +5,40 @@ from flask import current_app
 import os
 import uuid
 
+def analyze_with_roboflow(image_path, api_key):
+    """
+    Uses Roboflow retail shelf model for better product detection.
+    """
+    from inference_sdk import InferenceHTTPClient
+
+    client = InferenceHTTPClient(
+        api_url="https://detect.roboflow.com",
+        api_key=api_key
+    )
+
+    result = client.infer(
+        image_path,
+        model_id="retail-shelf-detection-svdeo/1"
+    )
+
+    detections = []
+    for i, pred in enumerate(result.get("predictions", [])):
+        detections.append({
+            "id": i,
+            "class_name": pred["class"],
+            "confidence": round(pred["confidence"], 3),
+            "bbox": {
+                "x1": int(pred["x"] - pred["width"] / 2),
+                "y1": int(pred["y"] - pred["height"] / 2),
+                "x2": int(pred["x"] + pred["width"] / 2),
+                "y2": int(pred["y"] + pred["height"] / 2),
+                "width": int(pred["width"]),
+                "height": int(pred["height"])
+            }
+        })
+
+    return detections
+
 # This variable holds the model in memory
 # We load it once and reuse it for every scan
 _model = None
@@ -27,7 +61,7 @@ def get_model():
 
 def analyze_shelf_image(image_path):
     """
-    Main function — takes an image path, runs YOLOv8,
+    Main function — takes an image path, runs Roboflow retail model,
     returns a dictionary of everything found.
     """
 
@@ -38,40 +72,40 @@ def analyze_shelf_image(image_path):
         raise ValueError(f"Could not read image at path: {image_path}")
 
     original_height, original_width = image.shape[:2]
-
-    # --- Step 2: Run YOLOv8 inference ---
-    model = get_model()
-    confidence = current_app.config["CONFIDENCE_THRESHOLD"]
-
-    results = model(image, conf=confidence, verbose=False)
-
-    # --- Step 3: Parse the results ---
-    detections = []
     annotated_image = image.copy()
 
-    result = results[0]  # We only process one image at a time
+    # --- Step 2: Run Roboflow retail model ---
+    try:
+        from inference_sdk import InferenceHTTPClient
 
-    # Check if we got any detections at all
-    if result.boxes is not None:
-        boxes = result.boxes
-        masks = result.masks  # Segmentation masks (can be None for non-seg models)
+        api_key = current_app.config.get("ROBOFLOW_API_KEY", "")
 
-        for i, box in enumerate(boxes):
+        client = InferenceHTTPClient(
+            api_url="https://serverless.roboflow.com",
+            api_key=api_key
+        )
 
-            # Bounding box coordinates
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        result = client.infer(
+            image_path,
+            model_id="retail-shelf-detection-svdeo/4"
+        )
 
-            # Confidence score and class
-            confidence_score = float(box.conf[0])
-            class_id = int(box.cls[0])
-            class_name = model.names[class_id]
+        detections = []
+        for i, pred in enumerate(result.get("predictions", [])):
+            x1 = int(pred["x"] - pred["width"] / 2)
+            y1 = int(pred["y"] - pred["height"] / 2)
+            x2 = int(pred["x"] + pred["width"] / 2)
+            y2 = int(pred["y"] + pred["height"] / 2)
 
-            # Build detection dictionary
+            class_name = pred.get("class", "product")
+            if class_name == "0" or class_name.isdigit():
+                class_name = "product"
+            confidence_score = round(pred["confidence"], 3)
+
             detection = {
                 "id": i,
                 "class_name": class_name,
-                "confidence": round(confidence_score, 3),
+                "confidence": confidence_score,
                 "bbox": {
                     "x1": x1, "y1": y1,
                     "x2": x2, "y2": y2,
@@ -81,13 +115,10 @@ def analyze_shelf_image(image_path):
             }
             detections.append(detection)
 
-            # --- Step 4: Draw on the image ---
-            color = _get_color_for_class(class_id)
-
-            # Draw bounding box
+            # Draw on image
+            color = _get_color_for_class(i % 8)
             cv2.rectangle(annotated_image, (x1, y1), (x2, y2), color, 2)
 
-            # Draw label background
             label = f"{class_name} {confidence_score:.0%}"
             (label_w, label_h), _ = cv2.getTextSize(
                 label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
@@ -96,46 +127,69 @@ def analyze_shelf_image(image_path):
                 annotated_image,
                 (x1, y1 - label_h - 8),
                 (x1 + label_w + 4, y1),
-                color, -1  # -1 means filled rectangle
+                color, -1
             )
-
-            # Draw label text
             cv2.putText(
                 annotated_image, label,
                 (x1 + 2, y1 - 4),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                (255, 255, 255), 1  # White text
+                (255, 255, 255), 1
             )
 
-            # Draw segmentation mask if available
-            if masks is not None and i < len(masks):
-                mask = masks[i].data[0].numpy()
-                mask = cv2.resize(
-                    mask, (original_width, original_height)
+        print(f"[ShelfScan] Roboflow detected {len(detections)} products")
+
+    except Exception as e:
+        print(f"[ShelfScan] Roboflow failed, falling back to YOLOv8: {e}")
+
+        # Fallback to original YOLOv8
+        model = get_model()
+        confidence = current_app.config["CONFIDENCE_THRESHOLD"]
+        results = model(image, conf=confidence, verbose=False)
+        result = results[0]
+        detections = []
+
+        if result.boxes is not None:
+            for i, box in enumerate(result.boxes):
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                confidence_score = float(box.conf[0])
+                class_id = int(box.cls[0])
+                class_name = model.names[class_id]
+
+                detections.append({
+                    "id": i,
+                    "class_name": class_name,
+                    "confidence": round(confidence_score, 3),
+                    "bbox": {
+                        "x1": x1, "y1": y1,
+                        "x2": x2, "y2": y2,
+                        "width": x2 - x1,
+                        "height": y2 - y1
+                    }
+                })
+
+                color = _get_color_for_class(class_id)
+                cv2.rectangle(annotated_image, (x1, y1), (x2, y2), color, 2)
+                label = f"{class_name} {confidence_score:.0%}"
+                cv2.putText(
+                    annotated_image, label,
+                    (x1 + 2, y1 - 4),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (255, 255, 255), 1
                 )
-                mask = (mask > 0.5).astype(np.uint8)
 
-                colored_mask = np.zeros_like(annotated_image)
-                colored_mask[mask == 1] = color
-
-                annotated_image = cv2.addWeighted(
-                    annotated_image, 1.0,
-                    colored_mask, 0.4,
-                    0
-                )
-
-    # --- Step 5: Detect empty shelf gaps ---
+    # --- Detect empty gaps ---
     empty_gaps = _detect_empty_gaps(
         original_width, original_height, detections
     )
 
-    # --- Step 6: Save the annotated image ---
+    # --- Save annotated image ---
     results_folder = current_app.config["RESULTS_FOLDER"]
     result_filename = f"result_{uuid.uuid4().hex[:8]}.jpg"
     result_path = os.path.join(results_folder, result_filename)
     cv2.imwrite(result_path, annotated_image)
 
-    # --- Step 7: Build and return final summary ---
+    # --- Return results ---
     return {
         "total_detections": len(detections),
         "detections": detections,
@@ -149,7 +203,6 @@ def analyze_shelf_image(image_path):
         },
         "result_image": result_filename
     }
-
 
 def _detect_empty_gaps(width, height, detections):
     """

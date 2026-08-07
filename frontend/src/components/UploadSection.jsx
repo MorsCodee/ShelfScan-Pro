@@ -67,77 +67,120 @@ export default function UploadSection({ setScanResults, setIsLoading, isLoading 
     } finally {
       setIsLoading(false)
     }
-  }
-
+}
   return (
     <div style={styles.wrapper}>
 
-      {/* ── Title ── */}
-      <div style={styles.titleBlock}>
-        <h1 style={styles.title}>Shelf Intelligence Scanner</h1>
-        <p style={styles.subtitle}>
-          Upload a shelf image and get instant AI-powered product detection,
-          gap analysis, and compliance scoring.
+      {/* Hero */}
+      <div style={styles.hero}>
+        <div style={styles.heroBadge}>
+          <span>✨</span>
+          <span>AI-Powered Shelf Analysis</span>
+        </div>
+        <h1 style={styles.heroTitle}>
+          Scan. Detect.{" "}
+          <span style={styles.heroGradient}>Optimize.</span>
+        </h1>
+        <p style={styles.heroSubtitle}>
+          Upload any shelf image and get instant product detection,
+          gap analysis, and compliance scoring powered by YOLOv8.
         </p>
       </div>
 
-      {/* ── Drop Zone ── */}
-      <div
-        {...getRootProps()}
-        style={{
-          ...styles.dropzone,
-          ...(isDragActive ? styles.dropzoneActive : {}),
-          ...(isLoading ? styles.dropzoneDisabled : {}),
-        }}
-      >
-        <input {...getInputProps()} />
+      {/* Upload area */}
+      <div style={styles.uploadCard}>
+        <div
+          {...getRootProps()}
+          style={{
+            ...styles.dropzone,
+            ...(isDragActive ? styles.dropzoneActive : {}),
+            ...(isLoading ? styles.dropzoneDisabled : {}),
+          }}
+        >
+          <input {...getInputProps()} />
 
-        {preview ? (
-          // Show preview if file selected
-          <div style={styles.previewContainer}>
-            <img src={preview} alt="Selected shelf" style={styles.previewImage} />
-            <div style={styles.previewOverlay}>
-              <p style={styles.previewText}> {selectedFile.name}</p>
-              <p style={styles.previewHint}>Drop a new image to replace</p>
+          {preview ? (
+            <div style={styles.previewContainer}>
+              <img src={preview} alt="shelf" style={styles.previewImage} />
+              <div style={styles.previewOverlay}>
+                <div style={styles.previewBadge}>
+                  <span>📁</span>
+                  <span>{selectedFile.name}</span>
+                </div>
+                <span style={styles.previewHint}>Drop a new image to replace</span>
+              </div>
             </div>
+          ) : (
+            <div style={styles.uploadPrompt}>
+              <div style={styles.uploadIconWrapper}>
+                <div style={styles.uploadIconRing} />
+                <span style={styles.uploadIcon}>
+                  {isDragActive ? "🎯" : "📤"}
+                </span>
+              </div>
+              <p style={styles.uploadText}>
+                {isDragActive ? "Drop it right here!" : "Drag & drop your shelf image"}
+              </p>
+              <p style={styles.uploadHint}>or click to browse files</p>
+              <div style={styles.uploadFormats}>
+                <span style={styles.formatTag}>JPG</span>
+                <span style={styles.formatTag}>JPEG</span>
+                <span style={styles.formatTag}>PNG</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
-        ) : (
-          // Show upload prompt if no file
-          <div style={styles.uploadPrompt}>
-            <div style={styles.uploadIcon}>📤</div>
-            <p style={styles.uploadText}>
-              {isDragActive
-                ? "Drop it here!"
-                : "Drag & drop a shelf image here"}
-            </p>
-            <p style={styles.uploadHint}>or click to browse</p>
-            <p style={styles.uploadFormats}>JPG, JPEG, PNG supported</p>
-          </div>
+        )}
+
+        <button
+          onClick={handleScan}
+          disabled={!selectedFile || isLoading}
+          style={{
+            ...styles.scanBtn,
+            ...(!selectedFile || isLoading ? styles.scanBtnDisabled : {})
+          }}
+        >
+          {isLoading ? (
+            <div style={styles.scanBtnInner}>
+              <div style={styles.spinner} />
+              <span>Analyzing shelf with AI...</span>
+            </div>
+          ) : (
+            <div style={styles.scanBtnInner}>
+              <span>🔍</span>
+              <span>Run AI Shelf Scan</span>
+            </div>
+          )}
+        </button>
+
+        {!selectedFile && (
+          <p style={styles.scanHint}>
+            Upload a shelf image above to get started
+          </p>
         )}
       </div>
 
-      {/* ── Error Message ── */}
-      {error && (
-        <div style={styles.errorBox}>
-           {error}
-        </div>
-      )}
-
-      {/* ── Scan Button ── */}
-      <button
-        onClick={handleScan}
-        disabled={!selectedFile || isLoading}
-        style={{
-          ...styles.scanBtn,
-          ...(!selectedFile || isLoading ? styles.scanBtnDisabled : {})
-        }}
-      >
-        {isLoading ? (
-          <span> Analyzing shelf... this may take 15-20 seconds</span>
-        ) : (
-          <span> Run Shelf Scan</span>
-        )}
-      </button>
+      {/* Feature pills */}
+      <div style={styles.features}>
+        {[
+          { icon: "🎯", label: "Product Detection" },
+          { icon: "📊", label: "Gap Analysis" },
+          { icon: "✅", label: "Compliance Score" },
+          { icon: "📄", label: "PDF Reports" },
+          { icon: "📈", label: "Drift Monitoring" },
+        ].map((f) => (
+          <div key={f.label} style={styles.featurePill}>
+            <span>{f.icon}</span>
+            <span>{f.label}</span>
+          </div>
+        ))}
+      </div>
 
     </div>
   )
@@ -147,71 +190,125 @@ const styles = {
   wrapper: {
     display: "flex",
     flexDirection: "column",
-    gap: "24px",
+    gap: "32px",
   },
-  titleBlock: {
+  hero: {
     textAlign: "center",
-    paddingTop: "16px",
+    paddingTop: "20px",
   },
-  title: {
-    fontSize: "32px",
-    fontWeight: "800",
+  heroBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(59,130,246,0.1)",
+    border: "1px solid rgba(59,130,246,0.2)",
+    color: "#60a5fa",
+    fontSize: "13px",
+    fontWeight: "500",
+    padding: "6px 16px",
+    borderRadius: "20px",
+    marginBottom: "20px",
+  },
+  heroTitle: {
+    fontSize: "48px",
+    fontWeight: "900",
     color: "#ffffff",
-    marginBottom: "8px",
+    letterSpacing: "-1px",
+    lineHeight: "1.1",
+    marginBottom: "16px",
   },
-  subtitle: {
-    fontSize: "16px",
-    color: "#9ca3af",
-    maxWidth: "600px",
+  heroGradient: {
+    background: "linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
+  heroSubtitle: {
+    fontSize: "17px",
+    color: "#6b7280",
+    maxWidth: "520px",
     margin: "0 auto",
-    lineHeight: "1.6",
+    lineHeight: "1.7",
+  },
+  uploadCard: {
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: "24px",
+    padding: "24px",
+    backdropFilter: "blur(20px)",
   },
   dropzone: {
-    border: "2px dashed #2d3748",
+    border: "2px dashed rgba(255,255,255,0.1)",
     borderRadius: "16px",
-    backgroundColor: "#1a1d27",
     cursor: "pointer",
-    transition: "all 0.2s",
-    minHeight: "280px",
+    transition: "all 0.3s",
+    minHeight: "260px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    marginBottom: "16px",
+    background: "rgba(255,255,255,0.01)",
   },
   dropzoneActive: {
     border: "2px dashed #3b82f6",
-    backgroundColor: "#1e3a5f",
+    background: "rgba(59,130,246,0.05)",
+    boxShadow: "inset 0 0 40px rgba(59,130,246,0.05)",
   },
   dropzoneDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
     cursor: "not-allowed",
   },
   uploadPrompt: {
     textAlign: "center",
-    padding: "48px",
+    padding: "40px",
+  },
+  uploadIconWrapper: {
+    position: "relative",
+    width: "80px",
+    height: "80px",
+    margin: "0 auto 20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadIconRing: {
+    position: "absolute",
+    inset: 0,
+    borderRadius: "50%",
+    border: "2px solid rgba(59,130,246,0.3)",
+    animation: "pulse-ring 2s ease-out infinite",
   },
   uploadIcon: {
-    fontSize: "48px",
-    marginBottom: "16px",
+    fontSize: "40px",
+    position: "relative",
+    zIndex: 1,
   },
   uploadText: {
     fontSize: "18px",
     fontWeight: "600",
-    color: "#ffffff",
+    color: "#e5e7eb",
     marginBottom: "8px",
   },
   uploadHint: {
     fontSize: "14px",
-    color: "#6b7280",
-    marginBottom: "12px",
+    color: "#4b5563",
+    marginBottom: "16px",
   },
   uploadFormats: {
-    fontSize: "12px",
-    color: "#4b5563",
-    backgroundColor: "#0f1117",
-    padding: "4px 12px",
-    borderRadius: "20px",
-    display: "inline-block",
+    display: "flex",
+    gap: "8px",
+    justifyContent: "center",
+  },
+  formatTag: {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    color: "#6b7280",
+    fontSize: "11px",
+    fontWeight: "600",
+    padding: "3px 10px",
+    borderRadius: "6px",
+    letterSpacing: "0.5px",
   },
   previewContainer: {
     width: "100%",
@@ -219,7 +316,7 @@ const styles = {
   },
   previewImage: {
     width: "100%",
-    maxHeight: "400px",
+    maxHeight: "380px",
     objectFit: "cover",
     display: "block",
   },
@@ -228,41 +325,96 @@ const styles = {
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: "12px 16px",
+    background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
+    padding: "24px 16px 12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  previewText: {
+  previewBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(10px)",
+    padding: "6px 12px",
+    borderRadius: "8px",
+    fontSize: "13px",
     color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: "600",
+    fontWeight: "500",
   },
   previewHint: {
-    color: "#9ca3af",
     fontSize: "12px",
+    color: "rgba(255,255,255,0.5)",
   },
   errorBox: {
-    backgroundColor: "#2d1b1b",
-    border: "1px solid #ef4444",
-    color: "#ef4444",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.2)",
+    color: "#f87171",
     padding: "12px 16px",
-    borderRadius: "8px",
+    borderRadius: "12px",
     fontSize: "14px",
+    marginBottom: "16px",
   },
   scanBtn: {
-    backgroundColor: "#3b82f6",
+    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
     color: "#ffffff",
     border: "none",
     padding: "16px 32px",
-    borderRadius: "12px",
+    borderRadius: "14px",
     fontSize: "16px",
     fontWeight: "700",
     cursor: "pointer",
     width: "100%",
-    transition: "all 0.2s",
+    transition: "all 0.3s",
+    boxShadow: "0 4px 20px rgba(59,130,246,0.3)",
+    letterSpacing: "-0.2px",
   },
   scanBtnDisabled: {
-    backgroundColor: "#1e3a5f",
-    color: "#4b5563",
+    background: "rgba(255,255,255,0.05)",
+    color: "#374151",
+    boxShadow: "none",
     cursor: "not-allowed",
+  },
+  scanBtnInner: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+  },
+  spinner: {
+    width: "18px",
+    height: "18px",
+    border: "2px solid rgba(255,255,255,0.3)",
+    borderTopColor: "#ffffff",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+  },
+  scanHint: {
+    textAlign: "center",
+    fontSize: "13px",
+    color: "#374151",
+    marginTop: "12px",
+  },
+  features: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+    justifyContent: "center",
+  },
+  featurePill: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    color: "#6b7280",
+    fontSize: "13px",
+    fontWeight: "500",
+    padding: "8px 16px",
+    borderRadius: "20px",
   },
 }
